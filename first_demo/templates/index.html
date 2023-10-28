@@ -3,17 +3,6 @@
 {% block content %}
 {% spaceless %}
 
-{% if categories %}
-<nav class="navbar navbar-default" role="navigation">
-  <div class="container">
-    {% for item in categories %}
-    <a href="{{ item.get_absolute_url }}">
-        <h4>{{ item.category }}</h4>
-    </a>
-{% endfor %}
-  </div>
-</nav>
-{% endif %}
 
 
 {% if articles %}
@@ -31,8 +20,5 @@
 </div>
 {% endfor %}
 {% endif %}
-    <a href="{% url 'articles-list' %}">
-        <h4>All pages</h4>
-    </a>
 {% endspaceless %}
 {% endblock %}

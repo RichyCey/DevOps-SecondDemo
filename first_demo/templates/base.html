@@ -10,10 +10,34 @@
     <link type="text/css"  href="{% static 'css/main.css' %}" rel="stylesheet">
 </head>
 <body>
-<div class="container">
-    <h1> Demo Project</h1>
-    {% block content %}
-    {% endblock %}
+<div class="navbar">
+    <div class="navcontainer">
+        <div class="navbar-head">
+            <h1> Demo Project</h1>
+        </div>
+        <div class="navbar-wrap">
+        {% if categories %}
+        {% for item in categories %}
+            <a href="{{ item.get_absolute_url }}">
+                <h4>{{ item.category }}</h4>
+            </a>
+        {% endfor %}
+        {% endif %}
+        </div>
+    </div>
+</div>
+<div class="bkimage">
+    <div class="container">
+        <div class="content">
+        {% block content %}
+        {% endblock %}  
+        </div>
+        <div class="Allp">
+            <a href="{% url 'articles-list' %}">
+            <h4>All pages</h4>
+        </a>
+        </div>
+    </div>
 </div>
 <!-- Javascripts Section -->
 <script src="{% static 'js/jquery.js' %}"
