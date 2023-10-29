@@ -1,6 +1,7 @@
 pipeline {
     agent any
     stages {
+/*        
         stage('Destroy') {
             steps {
                 sh '''
@@ -13,6 +14,7 @@ pipeline {
                 '''
             }
         }
+*/        
         stage('Clone repository') {
             steps {
                 sh '''
