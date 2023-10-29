@@ -126,6 +126,7 @@ module "alb" {
 
 variable "DATADOG_API_KEY" {
   description = "Datadog API Key"
+  default = "secret-text"
 }
 
 module "ecs" {
