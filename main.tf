@@ -202,7 +202,7 @@ resource "aws_route53_zone" "primary" {
 resource "aws_route53_record" "main" {
   zone_id = aws_route53_zone.primary.zone_id
   name    = "main.roman-demo.pp.ua"
-  type    = "A"
+  type    = "CNAME"
   ttl     = 300
   records = [module.alb.lb_dns_name]
 }
