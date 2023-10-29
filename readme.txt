@@ -1,1 +1,1 @@
-Test for webhook.
+Webhook test.
