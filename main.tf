@@ -161,7 +161,7 @@ resource "aws_ecs_task_definition" "this" {
         { name = "DD_API_KEY", value = "c24c8ef388e1237cd7b005afa732fd4841e0da0e" }, # Replace with your Datadog API key
       ],
       essential = true,
-      image = "584934534486.dkr.ecr.us-east-1.amazonaws.com/softserve-demo-ecr:lastest",
+      image = format("%v.dkr.ecr.%v.amazonaws.com/softserve-demo-ecr:lastest", data.aws_caller_identity.this.account_id, data.aws_region.this.name),
       name = local.container_name,
       portMappings = [{ containerPort = local.container_port }],
     },
