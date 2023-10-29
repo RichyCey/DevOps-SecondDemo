@@ -153,15 +153,12 @@ data "aws_iam_role" "ecs_task_execution_role" {
   name = "ecsTaskExecutionRole"
 }
 
-data "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
-}
-
 resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([
     {
       environment = [
         { name = "NODE_ENV", value = "production" },
+        { name = "DD_API_KEY", value = "c24c8ef388e1237cd7b005afa732fd4841e0da0e" }, # Replace with your Datadog API key
       ],
       essential = true,
       image = "584934534486.dkr.ecr.us-east-1.amazonaws.com/softserve-demo-ecr:lastest",
@@ -187,7 +184,6 @@ resource "aws_ecs_task_definition" "this" {
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 }
-
 
 
 
@@ -221,6 +217,9 @@ output "url" { value = "http://${module.alb.lb_dns_name}" }
 
 resource "aws_route53_zone" "primary" {
   name = "roman-demo.pp.ua"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_route53_record" "main" {
