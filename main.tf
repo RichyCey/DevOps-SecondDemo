@@ -108,7 +108,7 @@ module "alb" {
   {
    # * Setup a listener on port 80 and forward all HTTP
    # * traffic to target_groups[0] defined below which
-   # * will eventually point to our "Hello World" app.
+   # * will eventually point to our app.
    port               = 80
    protocol           = "HTTP"
    target_group_index = 0
@@ -149,24 +149,47 @@ module "ecs" {
  }
 }
 
-data "aws_iam_role" "ecs_task_execution_role" { name = "ecsTaskExecutionRole" }
-resource "aws_ecs_task_definition" "this" {
- container_definitions = jsonencode([{
-  environment: [
-   { name = "NODE_ENV", value = "production" }
-  ],
-  essential = true,
-  image = "584934534486.dkr.ecr.us-east-1.amazonaws.com/softserve-demo-ecr:lastest",
-  name = local.container_name,
-  portMappings = [{ containerPort = local.container_port }],
- }])
- cpu = 256
- execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
- family = "family-of-${local.example}-tasks"
- memory = 512
- network_mode = "awsvpc"
- requires_compatibilities = ["FARGATE"]
+data "aws_iam_role" "ecs_task_execution_role" {
+  name = "ecsTaskExecutionRole"
 }
+
+data "aws_iam_role" "ecs_task_execution_role" {
+  name = "ecsTaskExecutionRole"
+}
+
+resource "aws_ecs_task_definition" "this" {
+  container_definitions = jsonencode([
+    {
+      environment = [
+        { name = "NODE_ENV", value = "production" },
+      ],
+      essential = true,
+      image = "584934534486.dkr.ecr.us-east-1.amazonaws.com/softserve-demo-ecr:lastest",
+      name = local.container_name,
+      portMappings = [{ containerPort = local.container_port }],
+    },
+    {
+      name = "datadog-agent",
+      image = "datadog/agent:latest",
+      essential = true,
+      environment = [
+        { name = "DD_API_KEY", value = "c24c8ef388e1237cd7b005afa732fd4841e0da0e" }, # Replace with your Datadog API key
+        { name = "ECS_FARGATE", value = "true" },
+        { name = "DD_APM_ENABLED", value = "true" }, # Enable APM if you have it
+      ],
+      # You can configure other Datadog agent settings here as needed
+    },
+  ])
+  cpu = 256
+  execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
+  family = "family-of-${local.example}-tasks"
+  memory = 512
+  network_mode = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+}
+
+
+
 
 resource "aws_ecs_service" "this" {
  cluster = module.ecs.cluster_id
@@ -194,6 +217,7 @@ resource "aws_ecs_service" "this" {
 # * Output the URL of our Application Load Balancer so that we can connect to
 # * our application running inside ECS once it is up and running.
 output "url" { value = "http://${module.alb.lb_dns_name}" }
+
 
 resource "aws_route53_zone" "primary" {
   name = "roman-demo.pp.ua"
