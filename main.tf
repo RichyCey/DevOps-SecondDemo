@@ -196,12 +196,11 @@ resource "aws_ecs_service" "this" {
 output "url" { value = "http://${module.alb.lb_dns_name}" }
 
 resource "aws_route53_zone" "primary" {
-  name    = "roman-demo.pp.ua"
-  zone_id = "Z0446458NRVV162HV40S"  
+  name = "roman-demo.pp.ua"
 }
 
 resource "aws_route53_record" "main" {
-  zone_id = aws_route53_zone.primary.id
+  zone_id = aws_route53_zone.primary.zone_id
   name    = "main.roman-demo.pp.ua"
   type    = "CNAME"
   ttl     = 300
