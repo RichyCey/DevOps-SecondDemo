@@ -214,14 +214,6 @@ resource "aws_ecs_service" "this" {
 # * our application running inside ECS once it is up and running.
 output "url" { value = "http://${module.alb.lb_dns_name}" }
 
-
-resource "aws_route53_zone" "primary" {
-  name = "roman-demo.pp.ua"
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
 resource "aws_route53_record" "main" {
   zone_id = aws_route53_zone.primary.zone_id
   name    = "main.roman-demo.pp.ua"
