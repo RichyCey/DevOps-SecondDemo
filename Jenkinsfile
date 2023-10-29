@@ -1,76 +1,68 @@
 pipeline {
     agent any
-    environment {
-        AWS_ACCOUNT_ID = "${env.AWS_ACCOUNT_ID}"
-        AWS_DEFAULT_REGION = "${env.REGION}"
-        NAME = "${env.NAME}"
-        IMAGE_REPO_NAME = "demo-app"
-        IMAGE_TAG = "ver${env.BUILD_NUMBER}"
-        REPOSITORY_URL = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
-        T_ACCESS_KEY = "${TERRAFORM_ACCESS_KEY}"
-        T_S_ACCESS_KEY = "${TERRAFORM_SECRET_ACCESS_KEY}"
-    }
     stages {
-        stage("Clean Up") {
+        stage('Destroy') {
             steps {
-                deleteDir()
+                sh '''
+                    cd ~/DevOps-SecondDemo/
+                    terraform init
+                    terraform state rm aws_route53_zone.primary
+                    terraform destroy -auto-approve
+                    cd ~
+                    rm -rf ~/DevOps-SecondDemo/
+                '''
             }
         }
-        stage("Clone Repo") {
+        stage('Clone repository') {
             steps {
-                sh "git clone https://github.com/RichyCey/DevOps-FirstDemo.git"
-                sshagent(credentials: ['jenkins-slave']) {
-                    sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com sudo git -C /var/www/html pull --rebase --autostash https://github.com/RichyCey/DevOps-FirstDemo.git"
-                    sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com sudo chown -R ec2-user:ec2-user /var/www/html"
+                sh '''
+                    cd ~
+                    git clone https://github.com/RichyCey/DevOps-SecondDemo.git
+                '''
+            }
+        }
+        stage('Create EC Registry') {
+            steps {
+                withCredentials([string(credentialsId: 'DATADOG_API', variable: 'datadog_id')]) {
+                    sh '''
+                        cd ~/DevOps-SecondDemo/
+                        terraform init
+                        terraform apply -auto-approve -target=module.ecr -var "DATADOG_API_KEY=${datadog_id}"
+                    '''
                 }
             }
         }
-        stage('Build Docker Image') {
+        stage('Push to Registry') {
             steps {
-                sshagent(credentials: ['jenkins-slave']) {
-                    sh 'ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com "cd /var/www/html && sudo docker build -t ${IMAGE_REPO_NAME}:${IMAGE_TAG} ."'
+                withCredentials([string(credentialsId: 'AWS_REGION', variable: 'aws_region'), string(credentialsId: 'AWS_ID', variable: 'aws_id')]) {
+                    sh '''
+                        aws --version
+                        cd ~/DevOps-SecondDemo/
+                        docker build . -t softserve-demo-ecr:latest
+                        aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com
+                        docker tag softserve-demo-ecr ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com/softserve-demo-ecr:lastest
+                        docker push ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com/softserve-demo-ecr:lastest
+                    '''
                 }
             }
         }
-        stage('Tag Docker Image') {
+        stage('Creating Infrastructure') {
             steps {
-                sshagent(credentials: ['jenkins-slave']) {
-                    sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com 'sudo docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URL}:${IMAGE_TAG}'"
+                withCredentials([string(credentialsId: 'DATADOG_API', variable: 'datadog_id'), string(credentialsId: 'ROUTE53_ID', variable: 'route53_zone_id')]) {
+                    sh '''
+                        cd ~/DevOps-SecondDemo/
+                        terraform init
+                        terraform import aws_route53_zone.primary ${route53_zone_id}
+                        terraform apply -auto-approve -var "DATADOG_API_KEY=${datadog_id}"
+                    '''
                 }
             }
         }
-        stage('Authenticate with AWS ECR') {
-            steps {
-                script {
-                    sshagent(credentials: ['jenkins-slave']) {
-                        sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com 'aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | sudo docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${}'"
-
-                    }
-                }
-            }
-        }
-        stage('Push Docker Image to ECR') {
-            steps {
-                sshagent(credentials: ['jenkins-slave']) {
-                    sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com 'sudo docker push ${REPOSITORY_URL}:${IMAGE_TAG}'"
-                }
-            }
-        }
-        stage("Terraform") {
-            steps {
-                sshagent(credentials: ['jenkins-slave']) {
-                    sh "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com 'cd /var/www/html && terraform init && terraform plan && terraform apply -auto-approve'"
-                }
-            }
-        }
-        stage('Check Website') {
-            steps {
-                script {
-                    sshagent(credentials: ['jenkins-slave']) {
-                        def curlResult = sh(script: "ssh ec2-user@ec2-34-207-48-198.compute-1.amazonaws.com sudo curl -Is 34.207.48.198:8000 | head -n 1", returnStatus: true)
-                        echo "curlResult: ${curlResult}"
-                    }
-                }
+        stage("Cleaning build environment"){
+            steps{
+                sh '''
+                    docker system prune -a --volumes -f
+                '''
             }
         }
     }
