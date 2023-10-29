@@ -158,7 +158,7 @@ resource "aws_ecs_task_definition" "this" {
     {
       environment = [
         { name = "NODE_ENV", value = "production" },
-        { name = "DD_API_KEY", value = "c24c8ef388e1237cd7b005afa732fd4841e0da0e" }, # Replace with your Datadog API key
+        { name = "DD_API_KEY", value = "var.DATADOG_API_KEY" }, # Replace with your Datadog API key
       ],
       essential = true,
       image = format("%v.dkr.ecr.%v.amazonaws.com/softserve-demo-ecr:lastest", data.aws_caller_identity.this.account_id, data.aws_region.this.name),
@@ -170,7 +170,7 @@ resource "aws_ecs_task_definition" "this" {
       image = "datadog/agent:latest",
       essential = true,
       environment = [
-        { name = "DD_API_KEY", value = "c24c8ef388e1237cd7b005afa732fd4841e0da0e" }, # Replace with your Datadog API key
+        { name = "DD_API_KEY", value = "var.DATADOG_API_KEY" }, # Replace with your Datadog API key
         { name = "ECS_FARGATE", value = "true" },
         { name = "DD_APM_ENABLED", value = "true" }, # Enable APM if you have it
       ],
