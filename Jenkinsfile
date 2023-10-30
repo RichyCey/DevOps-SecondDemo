@@ -1,7 +1,7 @@
 pipeline {
     agent any
     stages {      
-        stage('Destroy') {
+        stage('Destroy previous infrastructure') {
             steps {
                 sh '''
                     cd ~/DevOps-SecondDemo/
@@ -32,7 +32,7 @@ pipeline {
                 }
             }
         }
-        stage('Push to Registry') {
+        stage('Build&Push to Registry') {
             steps {
                 withCredentials([string(credentialsId: 'AWS_REGION', variable: 'aws_region'), string(credentialsId: 'AWS_ID', variable: 'aws_id')]) {
                     sh '''
