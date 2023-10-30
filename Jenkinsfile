@@ -1,7 +1,6 @@
 pipeline {
     agent any
-    stages {
-/*        
+    stages {      
         stage('Destroy') {
             steps {
                 sh '''
@@ -13,8 +12,7 @@ pipeline {
                     rm -rf ~/DevOps-SecondDemo/
                 '''
             }
-        }
-*/        
+        }     
         stage('Clone repository') {
             steps {
                 sh '''
