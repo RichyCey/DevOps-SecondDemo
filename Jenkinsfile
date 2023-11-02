@@ -12,7 +12,8 @@ pipeline {
                     rm -rf ~/DevOps-SecondDemo/
                 '''
             }
-        }     
+        }
+/*     
         stage('Clone repository') {
             steps {
                 sh '''
@@ -65,5 +66,6 @@ pipeline {
                 '''
             }
         }
+*/
     }
 }
